@@ -1,0 +1,562 @@
+<!-- 
+MINDMATCH v1.6
+- LOGIC UPDATE: Game now starts with a RANDOM theme instead of always "Construction".
+- Maintained v1.5 content (9 Themes) and visibility styles.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Little Mind Matcher</title>
+    
+    <!-- iOS / PWA Settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Mind Matcher">
+    <meta name="theme-color" content="#ffffff">
+
+    <style>
+        :root {
+            /* SIZES */
+            --card-size: 130px;
+            --gap-size: 30px;
+            --primary-color: #FF9F1C;
+            --bg-transition: background 1s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: var(--bg-transition);
+        }
+
+        /* --- Dynamic Backgrounds --- */
+        body.theme-construction {
+            background-color: #f4e7c3;
+            background-image: radial-gradient(#d3c091 15%, transparent 16%), radial-gradient(#d3c091 15%, transparent 16%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+        }
+        body.theme-colors {
+            background-color: #ffffff;
+            background-image: radial-gradient(#FFADAD 20%, transparent 20%), radial-gradient(#FDFFB6 20%, transparent 20%);
+            background-size: 50px 50px;
+            background-position: 0 0, 25px 25px;
+        }
+        body.theme-numbers {
+            background-color: #e0f7fa;
+            background-image: linear-gradient(#b2ebf2 1px, transparent 1px), linear-gradient(90deg, #b2ebf2 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        body.theme-letters {
+            background-color: #fff9c4;
+            background-image: linear-gradient(#cfd8dc 1px, transparent 1px);
+            background-size: 100% 40px;
+        }
+        body.theme-animals {
+            background-color: #e8f5e9;
+            background-image: radial-gradient(#c8e6c9 10%, transparent 11%);
+            background-size: 40px 40px;
+        }
+        body.theme-fruit {
+            background-color: #ffebee;
+            background-image: repeating-linear-gradient(45deg, #ffcdd2 25%, transparent 25%, transparent 75%, #ffcdd2 75%, #ffcdd2), repeating-linear-gradient(45deg, #ffcdd2 25%, #ffebee 25%, #ffebee 75%, #ffcdd2 75%, #ffcdd2);
+            background-position: 0 0, 10px 10px;
+            background-size: 20px 20px;
+        }
+        /* NEW BACKGROUNDS */
+        body.theme-space {
+            background-color: #2c3e50;
+            background-image: radial-gradient(white 1px, transparent 1px), radial-gradient(white 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: 0 0, 25px 25px;
+        }
+        body.theme-weather {
+            background-color: #81D4FA;
+            background-image: radial-gradient(circle at 50% 50%, #B3E5FC 10%, transparent 10%);
+            background-size: 80px 80px;
+        }
+        body.theme-ocean {
+            background-color: #00BCD4;
+            background-image: radial-gradient(rgba(255,255,255,0.2) 20%, transparent 20%);
+            background-size: 30px 30px;
+        }
+
+        /* --- Game Board --- */
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(4, var(--card-size));
+            gap: var(--gap-size);
+            padding: 20px;
+            perspective: 1000px;
+        }
+
+        /* Responsive adjustments for phones/portraits */
+        @media (max-width: 600px) {
+            :root { --card-size: 100px; --gap-size: 20px; }
+            #game-board { grid-template-columns: repeat(2, var(--card-size)); }
+        }
+        @media (min-width: 601px) and (max-width: 900px) {
+             #game-board { grid-template-columns: repeat(4, var(--card-size)); }
+        }
+
+        /* --- Card Styles --- */
+        .card {
+            width: var(--card-size);
+            height: var(--card-size);
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card.matched {
+            animation: popOut 0.5s forwards;
+            pointer-events: none;
+        }
+
+        @keyframes popOut {
+            0% { transform: rotateY(180deg) scale(1); opacity: 1; }
+            50% { transform: rotateY(180deg) scale(1.2); opacity: 1; }
+            100% { transform: rotateY(180deg) scale(0); opacity: 0; }
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%; /* Circle shape */
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            font-size: 40px;
+            background-color: white;
+            /* Updated border to match icon style */
+            border: 5px solid #333; 
+        }
+
+        /* Card Back (Question Mark) */
+        .card-front {
+            background-color: var(--primary-color);
+            color: white;
+            transform: rotateY(0deg);
+        }
+        
+        .card-front::after {
+            content: "?";
+            font-size: 50px;
+            font-weight: bold;
+            /* Text shadow to make the ? pop against orange if needed, though white is good */
+            text-shadow: 2px 2px 0 #c4760d;
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            background-color: white;
+        }
+
+        .card-back svg {
+            width: 85%;
+            height: 85%;
+            /* Enhanced Drop shadow */
+            filter: drop-shadow(4px 4px 0px rgba(0,0,0,0.15));
+        }
+
+        /* --- Idle Wiggle Animation --- */
+        .wiggle {
+            animation: wiggle 1s ease-in-out infinite;
+        }
+
+        @keyframes wiggle {
+            0%, 100% { transform: rotateY(0deg) rotateZ(0deg); }
+            25% { transform: rotateY(0deg) rotateZ(-5deg); }
+            75% { transform: rotateY(0deg) rotateZ(5deg); }
+        }
+
+        /* --- Win Overlay --- */
+        #win-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        #win-text {
+            font-size: 5rem;
+            color: #FF4081;
+            text-shadow: 2px 2px 0 #fff;
+            opacity: 0;
+            transition: opacity 0.5s;
+            font-weight: 900;
+        }
+
+        /* --- Start Overlay (Click to start/audio context) --- */
+        #start-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+        button.big-btn {
+            padding: 20px 40px;
+            font-size: 2rem;
+            border-radius: 50px;
+            border: none;
+            background: #FF9F1C;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <h1 style="color:#555;">Little Mind Matcher</h1>
+        <button class="big-btn" onclick="startGame()">▶ Play</button>
+    </div>
+
+    <div id="game-board"></div>
+
+    <div id="win-overlay">
+        <div id="win-text">YAY!</div>
+    </div>
+
+    <!-- Confetti Canvas -->
+    <canvas id="confetti" style="position:fixed; top:0; left:0; pointer-events:none; width:100%; height:100%;"></canvas>
+
+<script>
+    /**
+     * LITTLE MIND MATCHER - GAME LOGIC
+     */
+
+    // --- Audio System (Web Audio API) ---
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playSound(type) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'flip') {
+            // Soft pop
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, now);
+            osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        } else if (type === 'match') {
+            // Happy Chime (Major Third)
+            playNote(523.25, now, 0.1, 'sine'); // C5
+            playNote(659.25, now + 0.1, 0.3, 'sine'); // E5
+        } else if (type === 'win') {
+            // Fanfare
+            playNote(523.25, now, 0.1, 'triangle'); // C
+            playNote(659.25, now + 0.1, 0.1, 'triangle'); // E
+            playNote(783.99, now + 0.2, 0.1, 'triangle'); // G
+            playNote(1046.50, now + 0.3, 0.6, 'triangle'); // C6
+        }
+    }
+
+    function playNote(freq, time, duration, type) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.3, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
+        osc.start(time);
+        osc.stop(time + duration);
+    }
+
+    // --- Icon Assets (SVGs) ---
+    // UPDATED: Thicker strokes (5-6px) and added black outlines to yellow items
+    const svgs = {
+        // Construction - Bold strokes
+        excavator: `<svg viewBox="0 0 100 100"><path d="M10,80 L40,80 L40,60 L20,60 L20,50 L50,50 L60,30 L80,30 L80,50 L90,80 L10,80" fill="#FFC107" stroke="#333" stroke-width="6" stroke-linejoin="round"/><circle cx="25" cy="80" r="8" fill="#333"/><circle cx="75" cy="80" r="8" fill="#333"/></svg>`,
+        bulldozer: `<svg viewBox="0 0 100 100"><path d="M10,70 L30,70 L30,50 L60,50 L60,40 L40,40 L10,70" fill="#FB8C00" stroke="#333" stroke-width="6" stroke-linejoin="round"/><rect x="60" y="40" width="30" height="30" fill="#FFC107" stroke="#333" stroke-width="6"/><circle cx="40" cy="75" r="8" fill="#333"/><circle cx="80" cy="75" r="8" fill="#333"/></svg>`,
+        truck: `<svg viewBox="0 0 100 100"><path d="M10,40 L60,40 L60,70 L10,70 Z" fill="#E53935" stroke="#333" stroke-width="6" stroke-linejoin="round"/><rect x="65" y="50" width="25" height="20" fill="#42A5F5" stroke="#333" stroke-width="6"/><circle cx="30" cy="75" r="8" fill="#333"/><circle cx="75" cy="75" r="8" fill="#333"/></svg>`,
+        mixer: `<svg viewBox="0 0 100 100"><circle cx="45" cy="45" r="25" fill="#90A4AE" stroke="#333" stroke-width="6"/><rect x="60" y="50" width="30" height="20" fill="#FFC107" stroke="#333" stroke-width="6"/><circle cx="30" cy="75" r="8" fill="#333"/><circle cx="80" cy="75" r="8" fill="#333"/></svg>`,
+        
+        // Colors
+        firetruck: `<svg viewBox="0 0 100 100"><path d="M10,50 h60 v20 h-60 z" fill="#D32F2F" stroke="#333" stroke-width="4"/><rect x="70" y="55" width="20" height="15" fill="#D32F2F" stroke="#333" stroke-width="4"/><circle cx="25" cy="75" r="8"/><circle cx="80" cy="75" r="8"/><rect x="20" y="40" width="40" height="10" fill="#ccc" stroke="#333" stroke-width="2"/></svg>`,
+        whale: `<svg viewBox="0 0 100 100"><path d="M20,60 Q20,30 50,30 Q80,30 90,60 Q80,80 50,80 Q30,80 20,60" fill="#2196F3" stroke="#333" stroke-width="4"/><circle cx="35" cy="50" r="3" fill="white"/></svg>`,
+        duck: `<svg viewBox="0 0 100 100"><path d="M30,50 Q30,30 50,30 Q60,30 65,40 Q75,40 80,50 Q80,70 50,70 Q30,70 30,50" fill="#FFEB3B" stroke="#333" stroke-width="4"/><circle cx="45" cy="45" r="3" fill="black"/><path d="M20,50 L30,55 L30,45 Z" fill="orange" stroke="#333" stroke-width="2"/></svg>`,
+        frog: `<svg viewBox="0 0 100 100"><circle cx="50" cy="60" r="25" fill="#76FF03" stroke="#333" stroke-width="4"/><circle cx="40" cy="45" r="8" fill="#76FF03" stroke="#333" stroke-width="4"/><circle cx="60" cy="45" r="8" fill="#76FF03" stroke="#333" stroke-width="4"/><circle cx="40" cy="45" r="3" fill="black"/><circle cx="60" cy="45" r="3" fill="black"/></svg>`,
+        
+        // Numbers
+        n1: `<svg viewBox="0 0 100 100"><text x="50" y="75" font-size="70" text-anchor="middle" fill="#333" font-family="Arial" font-weight="900">1</text></svg>`,
+        n2: `<svg viewBox="0 0 100 100"><text x="50" y="75" font-size="70" text-anchor="middle" fill="#333" font-family="Arial" font-weight="900">2</text></svg>`,
+        n3: `<svg viewBox="0 0 100 100"><text x="50" y="75" font-size="70" text-anchor="middle" fill="#333" font-family="Arial" font-weight="900">3</text></svg>`,
+        n4: `<svg viewBox="0 0 100 100"><text x="50" y="75" font-size="70" text-anchor="middle" fill="#333" font-family="Arial" font-weight="900">4</text></svg>`,
+
+        // Letters
+        lA: `<svg viewBox="0 0 100 100"><text x="50" y="75" font-size="70" text-anchor="middle" fill="#E91E63" font-family="Arial" font-weight="900">A</text></svg>`,
+        lB: `<svg viewBox="0 0 100 100"><text x="50" y="75" font-size="70" text-anchor="middle" fill="#2196F3" font-family="Arial" font-weight="900">B</text></svg>`,
+        lC: `<svg viewBox="0 0 100 100"><text x="50" y="75" font-size="70" text-anchor="middle" fill="#4CAF50" font-family="Arial" font-weight="900">C</text></svg>`,
+        lD: `<svg viewBox="0 0 100 100"><text x="50" y="75" font-size="70" text-anchor="middle" fill="#FF9800" font-family="Arial" font-weight="900">D</text></svg>`,
+
+        // Animals
+        cat: `<svg viewBox="0 0 100 100"><circle cx="50" cy="55" r="25" fill="#9E9E9E" stroke="#333" stroke-width="4"/><polygon points="30,40 25,20 45,35" fill="#9E9E9E" stroke="#333" stroke-width="4" stroke-linejoin="round"/><polygon points="70,40 75,20 55,35" fill="#9E9E9E" stroke="#333" stroke-width="4" stroke-linejoin="round"/><circle cx="42" cy="50" r="3"/><circle cx="58" cy="50" r="3"/><path d="M45,60 Q50,65 55,60" fill="none" stroke="black" stroke-width="3"/></svg>`,
+        dog: `<svg viewBox="0 0 100 100"><path d="M30,40 Q50,20 70,40 Q70,70 50,70 Q30,70 30,40" fill="#795548" stroke="#333" stroke-width="4"/><ellipse cx="40" cy="45" rx="3" ry="5" fill="black"/><ellipse cx="60" cy="45" rx="3" ry="5" fill="black"/><path d="M45,60 Q50,55 55,60" fill="none" stroke="black" stroke-width="3"/><ellipse cx="25" cy="45" rx="5" ry="15" fill="#5D4037" stroke="#333" stroke-width="2"/><ellipse cx="75" cy="45" rx="5" ry="15" fill="#5D4037" stroke="#333" stroke-width="2"/></svg>`,
+        lion: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="30" fill="#F39C12" stroke="#333" stroke-width="4"/><circle cx="50" cy="50" r="20" fill="#F1C40F" stroke="#333" stroke-width="3"/><circle cx="42" cy="45" r="3"/><circle cx="58" cy="45" r="3"/><path d="M45,55 Q50,60 55,55" stroke="black" stroke-width="3"/></svg>`,
+        elephant: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="25" fill="#B0BEC5" stroke="#333" stroke-width="4"/><circle cx="40" cy="45" r="3"/><circle cx="60" cy="45" r="3"/><path d="M50,55 Q50,80 70,70" fill="none" stroke="#B0BEC5" stroke-width="6"/><circle cx="20" cy="40" r="15" fill="#B0BEC5" stroke="#333" stroke-width="4"/><circle cx="80" cy="40" r="15" fill="#B0BEC5" stroke="#333" stroke-width="4"/></svg>`,
+
+        // Fruit
+        apple: `<svg viewBox="0 0 100 100"><circle cx="50" cy="55" r="25" fill="#F44336" stroke="#333" stroke-width="4"/><path d="M50,30 L50,20" stroke="#5D4037" stroke-width="4"/><path d="M50,30 Q60,20 60,30" fill="none" stroke="#4CAF50" stroke-width="4"/></svg>`,
+        banana: `<svg viewBox="0 0 100 100"><path d="M30,80 Q50,10 80,40 Q60,30 30,80 Z" fill="#FFEB3B" stroke="#333" stroke-width="4" stroke-linejoin="round"/></svg>`,
+        grape: `<svg viewBox="0 0 100 100"><g stroke="#333" stroke-width="2"><circle cx="50" cy="70" r="8" fill="#AB47BC"/><circle cx="40" cy="55" r="8" fill="#AB47BC"/><circle cx="60" cy="55" r="8" fill="#AB47BC"/><circle cx="30" cy="40" r="8" fill="#AB47BC"/><circle cx="50" cy="40" r="8" fill="#AB47BC"/><circle cx="70" cy="40" r="8" fill="#AB47BC"/></g><rect x="48" y="20" width="4" height="20" fill="#5D4037"/></svg>`,
+        strawberry: `<svg viewBox="0 0 100 100"><path d="M30,30 Q50,100 70,30 Q50,10 30,30" fill="#E91E63" stroke="#333" stroke-width="4"/><path d="M30,30 L40,20 L50,30 L60,20 L70,30" fill="none" stroke="#4CAF50" stroke-width="4" stroke-linejoin="round"/></svg>`,
+
+        // NEW THEME: Space
+        rocket: `<svg viewBox="0 0 100 100"><path d="M50,10 Q20,60 20,80 L80,80 Q80,60 50,10 Z" fill="#E0E0E0" stroke="#333" stroke-width="4" stroke-linejoin="round"/><circle cx="50" cy="50" r="10" fill="#81D4FA" stroke="#333" stroke-width="4"/><path d="M20,80 L10,95 L30,95 L20,80 Z" fill="#F44336" stroke="#333" stroke-width="4"/><path d="M80,80 L90,95 L70,95 L80,80 Z" fill="#F44336" stroke="#333" stroke-width="4"/></svg>`,
+        planet: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="25" fill="#FF9800" stroke="#333" stroke-width="4"/><path d="M20,60 Q50,90 80,40" fill="none" stroke="#333" stroke-width="6"/><path d="M20,60 Q50,90 80,40" fill="none" stroke="#FFCC80" stroke-width="3"/></svg>`,
+        moon: `<svg viewBox="0 0 100 100"><path d="M60,20 A30,30 0 1,0 60,80 A20,20 0 1,1 60,20 Z" fill="#FFF176" stroke="#333" stroke-width="4" stroke-linejoin="round"/></svg>`,
+        alien: `<svg viewBox="0 0 100 100"><path d="M20,30 Q50,0 80,30 Q90,60 50,90 Q10,60 20,30 Z" fill="#76FF03" stroke="#333" stroke-width="4"/><circle cx="35" cy="45" r="5" fill="black"/><circle cx="65" cy="45" r="5" fill="black"/><path d="M40,70 Q50,80 60,70" fill="none" stroke="#333" stroke-width="3"/></svg>`,
+
+        // NEW THEME: Weather
+        sun: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="20" fill="#FFEB3B" stroke="#333" stroke-width="4"/><g stroke="#333" stroke-width="4"><path d="M50,10 L50,25"/><path d="M50,75 L50,90"/><path d="M10,50 L25,50"/><path d="M75,50 L90,50"/><path d="M22,22 L32,32"/><path d="M68,68 L78,78"/><path d="M22,78 L32,68"/><path d="M68,32 L78,22"/></g></svg>`,
+        cloud: `<svg viewBox="0 0 100 100"><path d="M20,60 Q10,60 10,50 Q10,30 30,30 Q40,10 60,30 Q80,20 90,40 Q100,60 80,70 Q60,80 20,60 Z" fill="#E0F7FA" stroke="#333" stroke-width="4" stroke-linejoin="round"/></svg>`,
+        umbrella: `<svg viewBox="0 0 100 100"><path d="M10,50 Q50,0 90,50" fill="#E91E63" stroke="#333" stroke-width="4"/><rect x="48" y="50" width="4" height="30" fill="#333"/><path d="M48,80 Q48,90 58,90" fill="none" stroke="#333" stroke-width="4"/></svg>`,
+        snowman: `<svg viewBox="0 0 100 100"><circle cx="50" cy="70" r="20" fill="white" stroke="#333" stroke-width="4"/><circle cx="50" cy="40" r="15" fill="white" stroke="#333" stroke-width="4"/><circle cx="45" cy="35" r="2" fill="black"/><circle cx="55" cy="35" r="2" fill="black"/><rect x="35" y="20" width="30" height="5" fill="#333"/><rect x="40" y="5" width="20" height="15" fill="#333"/></svg>`,
+
+        // NEW THEME: Ocean
+        fish: `<svg viewBox="0 0 100 100"><path d="M80,50 Q60,20 20,50 Q60,80 80,50 L95,65 L95,35 L80,50 Z" fill="#FF9800" stroke="#333" stroke-width="4" stroke-linejoin="round"/><circle cx="35" cy="45" r="3" fill="black"/></svg>`,
+        crab: `<svg viewBox="0 0 100 100"><path d="M20,50 Q50,20 80,50 Q80,70 50,70 Q20,70 20,50" fill="#F44336" stroke="#333" stroke-width="4"/><circle cx="35" cy="45" r="3" fill="black"/><circle cx="65" cy="45" r="3" fill="black"/><path d="M10,40 L20,50 M90,40 L80,50" stroke="#333" stroke-width="4"/></svg>`,
+        octopus: `<svg viewBox="0 0 100 100"><circle cx="50" cy="40" r="20" fill="#9C27B0" stroke="#333" stroke-width="4"/><path d="M30,55 Q20,80 30,90 M40,60 Q40,85 50,90 M60,60 Q60,85 70,90 M70,55 Q80,80 70,90" fill="none" stroke="#9C27B0" stroke-width="6" stroke-linecap="round"/><circle cx="42" cy="40" r="3" fill="white"/><circle cx="58" cy="40" r="3" fill="white"/></svg>`,
+        starfish: `<svg viewBox="0 0 100 100"><path d="M50,10 L60,40 L95,40 L65,60 L75,90 L50,70 L25,90 L35,60 L5,40 L40,40 Z" fill="#FF5722" stroke="#333" stroke-width="4" stroke-linejoin="round"/></svg>`
+    };
+
+    const themes = [
+        { name: 'construction', icons: ['excavator', 'bulldozer', 'truck', 'mixer'] },
+        { name: 'colors', icons: ['firetruck', 'whale', 'duck', 'frog'] },
+        { name: 'numbers', icons: ['n1', 'n2', 'n3', 'n4'] },
+        { name: 'letters', icons: ['lA', 'lB', 'lC', 'lD'] },
+        { name: 'animals', icons: ['cat', 'dog', 'lion', 'elephant'] },
+        { name: 'fruit', icons: ['apple', 'banana', 'grape', 'strawberry'] },
+        { name: 'space', icons: ['rocket', 'planet', 'moon', 'alien'] },
+        { name: 'weather', icons: ['sun', 'cloud', 'umbrella', 'snowman'] },
+        { name: 'ocean', icons: ['fish', 'crab', 'octopus', 'starfish'] }
+    ];
+
+    // --- State Management ---
+    let currentThemeIndex = 0;
+    let cardsArray = [];
+    let hasFlippedCard = false;
+    let lockBoard = false;
+    let firstCard, secondCard;
+    let matchesFound = 0;
+    const TOTAL_PAIRS = 4;
+    let idleTimer;
+
+    function startGame() {
+        document.getElementById('start-screen').style.display = 'none';
+        initAudio();
+        // LOGIC UPDATE: Pick a random theme to start
+        currentThemeIndex = Math.floor(Math.random() * themes.length);
+        loadTheme(currentThemeIndex);
+    }
+
+    function loadTheme(index) {
+        matchesFound = 0;
+        const theme = themes[index];
+        const board = document.getElementById('game-board');
+        
+        // Set Body Class for Background
+        document.body.className = `theme-${theme.name}`;
+        
+        // Prepare Card Data (duplicate and shuffle)
+        let deck = [...theme.icons, ...theme.icons];
+        deck.sort(() => 0.5 - Math.random());
+
+        // Render Board
+        board.innerHTML = '';
+        deck.forEach(iconName => {
+            const card = document.createElement('div');
+            card.classList.add('card');
+            card.dataset.icon = iconName;
+            
+            card.innerHTML = `
+                <div class="card-face card-front"></div>
+                <div class="card-face card-back">${svgs[iconName]}</div>
+            `;
+            
+            card.addEventListener('click', flipCard);
+            board.appendChild(card);
+        });
+
+        resetIdleTimer();
+    }
+
+    // --- Interaction Logic ---
+    function flipCard() {
+        if (lockBoard) return;
+        if (this === firstCard) return;
+
+        resetIdleTimer(); // User interacted, reset hint
+
+        this.classList.add('flipped');
+        playSound('flip');
+
+        if (!hasFlippedCard) {
+            hasFlippedCard = true;
+            firstCard = this;
+            return;
+        }
+
+        secondCard = this;
+        checkForMatch();
+    }
+
+    function checkForMatch() {
+        let isMatch = firstCard.dataset.icon === secondCard.dataset.icon;
+        isMatch ? disableCards() : unflipCards();
+    }
+
+    function disableCards() {
+        lockBoard = true;
+        playSound('match');
+        
+        setTimeout(() => {
+            firstCard.classList.add('matched');
+            secondCard.classList.add('matched');
+            resetBoard();
+            matchesFound++;
+            
+            if (matchesFound === TOTAL_PAIRS) {
+                setTimeout(handleWin, 500);
+            }
+        }, 500);
+    }
+
+    function unflipCards() {
+        lockBoard = true;
+        setTimeout(() => {
+            firstCard.classList.remove('flipped');
+            secondCard.classList.remove('flipped');
+            resetBoard();
+        }, 1000);
+    }
+
+    function resetBoard() {
+        [hasFlippedCard, lockBoard] = [false, false];
+        [firstCard, secondCard] = [null, null];
+    }
+
+    // --- Win & Progression ---
+    function handleWin() {
+        playSound('win');
+        fireConfetti();
+        
+        const winText = document.getElementById('win-text');
+        winText.style.opacity = '1';
+
+        setTimeout(() => {
+            winText.style.opacity = '0';
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            loadTheme(currentThemeIndex);
+        }, 3000);
+    }
+
+    // --- Idle System ---
+    function resetIdleTimer() {
+        clearTimeout(idleTimer);
+        // Remove wiggle from all cards
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('wiggle'));
+
+        // Set new timer
+        idleTimer = setTimeout(() => {
+            const unflipped = document.querySelectorAll('.card:not(.flipped):not(.matched)');
+            unflipped.forEach(c => c.classList.add('wiggle'));
+        }, 10000); // 10 seconds
+    }
+
+    // --- Confetti Effect (Canvas) ---
+    function fireConfetti() {
+        const canvas = document.getElementById('confetti');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        const particles = [];
+        const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
+        
+        for (let i = 0; i < 100; i++) {
+            particles.push({
+                x: window.innerWidth / 2,
+                y: window.innerHeight / 2,
+                w: Math.random() * 10 + 5,
+                h: Math.random() * 10 + 5,
+                vx: (Math.random() - 0.5) * 20,
+                vy: (Math.random() - 0.5) * 20,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                life: 100
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let active = false;
+            particles.forEach(p => {
+                if (p.life > 0) {
+                    active = true;
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.5; // Gravity
+                    p.life--;
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(p.x, p.y, p.w, p.h);
+                }
+            });
+            if (active) requestAnimationFrame(draw);
+        }
+        draw();
+    }
+</script>
+</body>
+</html>
