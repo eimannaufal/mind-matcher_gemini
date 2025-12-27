@@ -1,7 +1,7 @@
 <!-- 
-MINDMATCH v1.6
-- LOGIC UPDATE: Game now starts with a RANDOM theme instead of always "Construction".
-- Maintained v1.5 content (9 Themes) and visibility styles.
+MINDMATCH v1.7
+- AUDIO UPDATE: Significantly increased volume for all sound effects (Flip, Match, Win).
+- Maintained v1.6 logic (Random start) and visibility styles.
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -280,11 +280,11 @@ MINDMATCH v1.6
         const now = audioCtx.currentTime;
 
         if (type === 'flip') {
-            // Soft pop
+            // Soft pop - Louder
             osc.type = 'sine';
             osc.frequency.setValueAtTime(400, now);
             osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
-            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.setValueAtTime(0.8, now); // Increased from 0.3 to 0.8
             gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
             osc.start(now);
             osc.stop(now + 0.1);
@@ -308,7 +308,8 @@ MINDMATCH v1.6
         gain.connect(audioCtx.destination);
         osc.type = type;
         osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.3, time);
+        // Increased base volume from 0.3 to 0.8
+        gain.gain.setValueAtTime(0.8, time); 
         gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
         osc.start(time);
         osc.stop(time + duration);
