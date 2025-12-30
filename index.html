@@ -1,10 +1,10 @@
 <!-- 
-MINDMATCH v2.6
-- SHADOWS GAME LAYOUT UPDATE:
-  - Feature: Switched layout to side-by-side columns.
-  - Detail: Draggable Icons are now on the Left, Shadow Targets on the Right.
-  - Detail: Items stack vertically (column) within their respective sides.
-- CORE: Maintained all v2.5 fixes (scrolling, safety zones).
+MINDMATCH v2.7
+- UX UPDATE: HOME BUTTON SAFETY
+  - Feature: Added "Toast" message mechanism to the Home button.
+  - Logic: First click shows "Press again to exit". Second click (within 2s) exits the game.
+  - Purpose: Prevents accidental exits during intense gameplay (especially Whack-a-Mole).
+- CORE: Maintained all v2.6 layout and scrolling fixes.
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -104,6 +104,29 @@ MINDMATCH v2.6
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
         #home-btn svg { width: 35px; height: 35px; fill: #333; }
+
+        /* --- TOAST MESSAGE --- */
+        #toast-msg {
+            position: fixed;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.75);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 1.2rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 2000;
+            font-weight: bold;
+            text-align: center;
+            white-space: nowrap;
+        }
+        #toast-msg.visible {
+            opacity: 1;
+        }
 
         /* --- MAIN MENU --- */
         #main-menu {
@@ -338,6 +361,9 @@ MINDMATCH v2.6
         <svg viewBox="0 0 24 24"><path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" /></svg>
     </div>
 
+    <!-- TOAST MESSAGE -->
+    <div id="toast-msg">Press again to exit</div>
+
     <!-- SCREEN 1: MAIN MENU -->
     <div id="main-menu" class="screen active">
         <h1 class="menu-title">Mind Matcher</h1>
@@ -388,7 +414,7 @@ MINDMATCH v2.6
 
 <script>
     /**
-     * MIND MATCH SUITE v2.6
+     * MIND MATCH SUITE v2.7
      * Includes: Memory, Whack-a-Mole, and Shadows (Shapes)
      */
 
@@ -450,12 +476,19 @@ MINDMATCH v2.6
 
     // --- Navigation ---
     let currentGame = null;
+    let homeClickCount = 0;
+    let homeClickTimer = null;
 
     function startGame(gameType) {
         initAudio();
         document.getElementById('main-menu').classList.remove('active');
         document.getElementById('home-btn').style.display = 'flex';
         currentGame = gameType;
+        
+        // Reset safety click check on game start
+        homeClickCount = 0;
+        clearTimeout(homeClickTimer);
+        document.getElementById('toast-msg').classList.remove('visible');
 
         if (gameType === 'memory') {
             document.getElementById('memory-screen').classList.add('active');
@@ -470,6 +503,26 @@ MINDMATCH v2.6
     }
 
     function goHome() {
+        // Safety Check: Double click to exit
+        if (homeClickCount === 0) {
+            homeClickCount = 1;
+            const toast = document.getElementById('toast-msg');
+            toast.classList.add('visible');
+            
+            // Reset after 2 seconds
+            homeClickTimer = setTimeout(() => {
+                homeClickCount = 0;
+                toast.classList.remove('visible');
+            }, 2000);
+            return; // Stop here
+        }
+
+        // If we are here, it's the second click
+        // Reset safety vars
+        homeClickCount = 0;
+        clearTimeout(homeClickTimer);
+        document.getElementById('toast-msg').classList.remove('visible');
+
         stopWhackGame();
         clearTimeout(idleTimer);
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
