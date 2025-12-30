@@ -1,12 +1,10 @@
 <!-- 
-MINDMATCH v2.5
-- LAYOUT ENGINE UPDATE:
-  - Fix: Switched main screens to `overflow-y: auto` and `justify-content: flex-start`.
-  - Result: The Main Menu is now scrollable on small screens instead of being cut off.
-- UI SAFETY ZONE:
-  - Fix: Added global top padding (85px) to game screens.
-  - Result: The "Shapes" drop zones no longer overlap the Home button on mobile.
-- CORE: Maintained all v2.4 game logic and assets.
+MINDMATCH v2.6
+- SHADOWS GAME LAYOUT UPDATE:
+  - Feature: Switched layout to side-by-side columns.
+  - Detail: Draggable Icons are now on the Left, Shadow Targets on the Right.
+  - Detail: Items stack vertically (column) within their respective sides.
+- CORE: Maintained all v2.5 fixes (scrolling, safety zones).
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -240,13 +238,13 @@ MINDMATCH v2.5
 
         #shadow-game-container {
             display: flex;
-            flex-direction: column;
+            /* Changed to row-reverse so Pieces (2nd child) are Left, Targets (1st child) are Right */
+            flex-direction: row-reverse; 
             align-items: center;
-            /* Changed from space-between to start to allow padding to work */
-            justify-content: flex-start; 
-            gap: 15vh; /* Responsive gap */
+            justify-content: space-evenly;
+            gap: 20px;
             width: 100%;
-            max-width: 600px;
+            max-width: 800px;
             /* Allow it to take natural height */
             height: auto; 
             min-height: 60vh;
@@ -254,8 +252,11 @@ MINDMATCH v2.5
 
         .shadow-row, .piece-row {
             display: flex;
-            justify-content: space-around;
-            width: 100%;
+            flex-direction: column; /* Stack items vertically */
+            justify-content: center;
+            align-items: center;
+            gap: 40px; /* Space between items within column */
+            width: auto;
         }
 
         .target-slot {
@@ -317,9 +318,9 @@ MINDMATCH v2.5
             #memory-board { grid-template-columns: repeat(2, var(--card-size)); }
             .menu-grid { flex-direction: column; gap: 20px; }
             
-            /* Reduced gap on mobile for shadows */
-            #shadow-game-container { gap: 10vh; }
-            .shadow-row, .piece-row { gap: 10px; }
+            /* Responsive gap for shadows side-by-side */
+            #shadow-game-container { gap: 10px; }
+            .shadow-row, .piece-row { gap: 20px; }
         }
 
         /* --- OVERLAYS --- */
@@ -387,7 +388,7 @@ MINDMATCH v2.5
 
 <script>
     /**
-     * MIND MATCH SUITE v2.5
+     * MIND MATCH SUITE v2.6
      * Includes: Memory, Whack-a-Mole, and Shadows (Shapes)
      */
 
