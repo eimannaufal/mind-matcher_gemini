@@ -1,10 +1,12 @@
 <!-- 
-MINDMATCH v2.4
-- SHADOWS GAME UPDATE:
-  - Massive Content Update: Added geometric shapes (Triangle, Square, Star, Heart, etc.).
-  - Fix: Restored missing assets (Alien, Octopus, Grapes, etc.) to the pool.
-  - Pool Size: Increased from ~20 to 35+ unique shapes to prevent repetition.
-- CORE: Maintained all v2.3 features.
+MINDMATCH v2.5
+- LAYOUT ENGINE UPDATE:
+  - Fix: Switched main screens to `overflow-y: auto` and `justify-content: flex-start`.
+  - Result: The Main Menu is now scrollable on small screens instead of being cut off.
+- UI SAFETY ZONE:
+  - Fix: Added global top padding (85px) to game screens.
+  - Result: The "Shapes" drop zones no longer overlap the Home button on mobile.
+- CORE: Maintained all v2.4 game logic and assets.
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -42,30 +44,48 @@ MINDMATCH v2.4
             padding: 0;
             width: 100vw;
             height: 100vh;
-            overflow: hidden;
+            /* Changed from hidden to allowing screen management */
+            overflow: hidden; 
             font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             background-color: #f0f0f0; /* Default menu bg */
             transition: var(--bg-transition);
         }
 
-        /* --- SCREENS --- */
+        /* --- SCREENS (SCROLL FIX APPLIED HERE) --- */
         .screen {
             display: none;
             width: 100%;
             height: 100%;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
             position: absolute;
             top: 0;
             left: 0;
+            /* Fix for scrolling issues: */
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 40px; /* Bottom buffer */
         }
 
         .screen.active {
             display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* Changed from center to flex-start to allow scrolling from top */
+            justify-content: flex-start; 
+            /* Fix for overlapping home button: Pushes content down */
+            padding-top: 85px; 
+        }
+
+        /* Special handling for Main Menu which doesn't have a visible home button */
+        #main-menu.active {
+            padding-top: 40px; /* Less padding needed since no button */
+            justify-content: center; /* Try to center, but... */
+        }
+        
+        /* Media query: If screen is short, align top so we can scroll */
+        @media (max-height: 800px) {
+            #main-menu.active {
+                justify-content: flex-start;
+            }
         }
 
         /* --- HOME BUTTON --- */
@@ -100,6 +120,7 @@ MINDMATCH v2.4
             margin-bottom: 30px;
             text-shadow: 2px 2px white;
             text-align: center;
+            margin-top: 20px;
         }
 
         .menu-grid {
@@ -107,6 +128,8 @@ MINDMATCH v2.4
             gap: 30px;
             flex-wrap: wrap;
             justify-content: center;
+            padding: 0 20px; /* Side padding for small screens */
+            padding-bottom: 50px; /* Extra space at bottom for scroll */
         }
 
         .game-card {
@@ -122,6 +145,7 @@ MINDMATCH v2.4
             cursor: pointer;
             box-shadow: 0 8px 0 #333;
             transition: transform 0.1s;
+            flex-shrink: 0; /* Prevent squishing */
         }
 
         .game-card:active {
@@ -148,6 +172,7 @@ MINDMATCH v2.4
             grid-template-columns: repeat(4, var(--card-size));
             gap: var(--gap-size);
             perspective: 1000px;
+            margin-bottom: 20px;
         }
 
         .card {
@@ -177,7 +202,7 @@ MINDMATCH v2.4
         body.theme-whack-snow { background-color: #E1F5FE; background-image: linear-gradient(#B3E5FC 2px, transparent 2px), linear-gradient(90deg, #B3E5FC 2px, transparent 2px); background-size: 50px 50px; }
         body.theme-whack-night { background-color: #1A237E; background-image: radial-gradient(white 1px, transparent 1px); background-size: 50px 50px; }
 
-        #whack-board { display: grid; grid-template-columns: repeat(3, var(--mole-size)); gap: 20px; }
+        #whack-board { display: grid; grid-template-columns: repeat(3, var(--mole-size)); gap: 20px; margin-top: 20px; }
         .hole { width: var(--mole-size); height: var(--mole-size); background: #5D4037; border-radius: 50%; border: 5px solid #3E2723; position: relative; overflow: hidden; box-shadow: inset 0 10px 10px rgba(0,0,0,0.5); transition: border-color 0.5s; }
         body.theme-whack-snow .hole { border-color: #B3E5FC; }
         body.theme-whack-night .hole { border-color: #3949AB; }
@@ -217,10 +242,14 @@ MINDMATCH v2.4
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between;
-            height: 80vh;
+            /* Changed from space-between to start to allow padding to work */
+            justify-content: flex-start; 
+            gap: 15vh; /* Responsive gap */
             width: 100%;
             max-width: 600px;
+            /* Allow it to take natural height */
+            height: auto; 
+            min-height: 60vh;
         }
 
         .shadow-row, .piece-row {
@@ -287,6 +316,9 @@ MINDMATCH v2.4
             :root { --card-size: 100px; --gap-size: 20px; --mole-size: 90px; --shape-size: 90px; }
             #memory-board { grid-template-columns: repeat(2, var(--card-size)); }
             .menu-grid { flex-direction: column; gap: 20px; }
+            
+            /* Reduced gap on mobile for shadows */
+            #shadow-game-container { gap: 10vh; }
             .shadow-row, .piece-row { gap: 10px; }
         }
 
@@ -355,7 +387,7 @@ MINDMATCH v2.4
 
 <script>
     /**
-     * MIND MATCH SUITE v2.4
+     * MIND MATCH SUITE v2.5
      * Includes: Memory, Whack-a-Mole, and Shadows (Shapes)
      */
 
